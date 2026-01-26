@@ -7,6 +7,10 @@ const PORT = process.env.PORT || 3000;
 const app = express();
 
 connectDB();
+app.get("/", (req, res) => {
+  res.send("Backend de cobranza funcionando 🚀");
+});
+
 
 app.use(cors());
 app.use(express.json());
