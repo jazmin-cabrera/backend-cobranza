@@ -4,41 +4,59 @@ const auth = require("../middleware/auth");
 
 const router = express.Router();
 
+// CREAR TARJETA
 router.post("/", auth, async (req, res) => {
-  const tarjeta = await Tarjeta.create({
-    ...req.body,
-    usuario: req.usuario
-  });
-  res.json(tarjeta);
-});
+  try {
+    const tarjeta = await Tarjeta.create({
+      ...req.body,
+      usuario: req.usuario.id // 👈 SOLO EL ID
+    });
 
-router.get("/", auth, async (req, res) => {
-  const tarjetas = await Tarjeta.find({ usuario: req.usuario });
-  res.json(tarjetas);
-});
-
-
-router.post("/:id/abono", auth, async (req, res) => {
-  const { monto } = req.body;
-
-  const tarjeta = await Tarjeta.findOne({
-    _id: req.params.id,
-    usuario: req.usuario
-  });
-
-  if (!tarjeta) {
-    return res.status(404).json({ msg: "Tarjeta no encontrada" });
+    res.json(tarjeta);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ msg: "Error al crear tarjeta" });
   }
+});
 
-  tarjeta.abonos.push({
-    monto
-  });
+// OBTENER TARJETAS DEL USUARIO
+router.get("/", auth, async (req, res) => {
+  try {
+    const tarjetas = await Tarjeta.find({
+      usuario: req.usuario.id // 👈 SOLO EL ID
+    });
 
-  tarjeta.restante = tarjeta.restante - monto;
+    res.json(tarjetas);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ msg: "Error al obtener tarjetas" });
+  }
+});
 
-  await tarjeta.save();
+// AGREGAR ABONO
+router.post("/:id/abono", auth, async (req, res) => {
+  try {
+    const { monto } = req.body;
 
-  res.json(tarjeta);
+    const tarjeta = await Tarjeta.findOne({
+      _id: req.params.id,
+      usuario: req.usuario.id // 👈 SOLO EL ID
+    });
+
+    if (!tarjeta) {
+      return res.status(404).json({ msg: "Tarjeta no encontrada" });
+    }
+
+    tarjeta.abonos.push({ monto });
+    tarjeta.restante -= monto;
+
+    await tarjeta.save();
+
+    res.json(tarjeta);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ msg: "Error al registrar abono" });
+  }
 });
 
 module.exports = router;
