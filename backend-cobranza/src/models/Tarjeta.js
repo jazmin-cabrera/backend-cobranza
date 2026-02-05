@@ -6,6 +6,11 @@ const TarjetaSchema = new mongoose.Schema({
     ref: "User",
     required: true
   },
+   clienteNombre: {
+    type: String,
+    required: true
+  },
+  
   producto: String,
   precioUnidad: Number,
   total: Number,
