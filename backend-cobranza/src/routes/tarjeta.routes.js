@@ -36,57 +36,26 @@ router.get("/", auth, async (req, res) => {
 // AGREGAR ABONO
 router.post("/:id/abono", auth, async (req, res) => {
   try {
-    let { monto } = req.body;
-
-    monto = Number(monto);
-
-    if (!monto || isNaN(monto) || monto <= 0) {
-      return res.status(400).json({ msg: "Monto inválido" });
-    }
+    const { monto } = req.body;
 
     const tarjeta = await Tarjeta.findOne({
       _id: req.params.id,
-      usuario: req.usuario.id
+      usuario: req.usuario.id // 👈 SOLO EL ID
     });
 
     if (!tarjeta) {
       return res.status(404).json({ msg: "Tarjeta no encontrada" });
     }
 
-    if (tarjeta.restante - monto < 0) {
-      return res.status(400).json({ msg: "El abono excede el restante" });
-    }
-
     tarjeta.abonos.push({ monto });
-    tarjeta.restante = Number(tarjeta.restante) - monto;
+    tarjeta.restante -= monto;
 
     await tarjeta.save();
 
     res.json(tarjeta);
-
-  } catch (error) {
-    console.error("ERROR ABONO:", error);
-    res.status(500).json({ msg: "Error al registrar abono" });
-  }
-});
-
-
-// Ver detalle de una tarjeta
-router.get("/:id", auth, async (req, res) => {
-  try {
-    const tarjeta = await Tarjeta.findOne({
-      _id: req.params.id,
-      usuario: req.usuario.id // 👈 AQUÍ ESTABA EL ERROR
-    });
-
-    if (!tarjeta) {
-      return res.status(404).json({ msg: "Tarjeta no encontrada" });
-    }
-
-    res.json(tarjeta);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ msg: "Error al obtener tarjeta" });
+    res.status(500).json({ msg: "Error al registrar abono" });
   }
 });
 
