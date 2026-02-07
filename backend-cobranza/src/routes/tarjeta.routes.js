@@ -36,11 +36,17 @@ router.get("/", auth, async (req, res) => {
 // AGREGAR ABONO
 router.post("/:id/abono", auth, async (req, res) => {
   try {
-    const { monto } = req.body;
+    let { monto } = req.body;
+
+    monto = Number(monto);
+
+    if (!monto || isNaN(monto) || monto <= 0) {
+      return res.status(400).json({ msg: "Monto inválido" });
+    }
 
     const tarjeta = await Tarjeta.findOne({
       _id: req.params.id,
-      usuario: req.usuario.id // 👈 SOLO EL ID
+      usuario: req.usuario.id
     });
 
     if (!tarjeta) {
@@ -48,21 +54,22 @@ router.post("/:id/abono", auth, async (req, res) => {
     }
 
     if (tarjeta.restante - monto < 0) {
-    return res.status(400).json({ msg: "El abono excede el total" });
+      return res.status(400).json({ msg: "El abono excede el restante" });
     }
 
-
     tarjeta.abonos.push({ monto });
-    tarjeta.restante -= monto;
+    tarjeta.restante = Number(tarjeta.restante) - monto;
 
     await tarjeta.save();
 
     res.json(tarjeta);
+
   } catch (error) {
-    console.error(error);
+    console.error("ERROR ABONO:", error);
     res.status(500).json({ msg: "Error al registrar abono" });
   }
 });
+
 
 // Ver detalle de una tarjeta
 router.get("/:id", auth, async (req, res) => {
