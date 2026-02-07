@@ -59,4 +59,19 @@ router.post("/:id/abono", auth, async (req, res) => {
   }
 });
 
+// Ver detalle de una tarjeta
+router.get("/:id", auth, async (req, res) => {
+  const tarjeta = await Tarjeta.findOne({
+    _id: req.params.id,
+    usuario: req.usuario
+  });
+
+  if (!tarjeta) {
+    return res.status(404).json({ msg: "Tarjeta no encontrada" });
+  }
+
+  res.json(tarjeta);
+});
+
+
 module.exports = router;
