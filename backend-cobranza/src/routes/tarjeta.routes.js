@@ -47,6 +47,11 @@ router.post("/:id/abono", auth, async (req, res) => {
       return res.status(404).json({ msg: "Tarjeta no encontrada" });
     }
 
+    if (tarjeta.restante - monto < 0) {
+    return res.status(400).json({ msg: "El abono excede el total" });
+    }
+
+
     tarjeta.abonos.push({ monto });
     tarjeta.restante -= monto;
 
@@ -61,17 +66,23 @@ router.post("/:id/abono", auth, async (req, res) => {
 
 // Ver detalle de una tarjeta
 router.get("/:id", auth, async (req, res) => {
-  const tarjeta = await Tarjeta.findOne({
-    _id: req.params.id,
-    usuario: req.usuario
-  });
+  try {
+    const tarjeta = await Tarjeta.findOne({
+      _id: req.params.id,
+      usuario: req.usuario.id // 👈 AQUÍ ESTABA EL ERROR
+    });
 
-  if (!tarjeta) {
-    return res.status(404).json({ msg: "Tarjeta no encontrada" });
+    if (!tarjeta) {
+      return res.status(404).json({ msg: "Tarjeta no encontrada" });
+    }
+
+    res.json(tarjeta);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ msg: "Error al obtener tarjeta" });
   }
-
-  res.json(tarjeta);
 });
+
 
 
 module.exports = router;
