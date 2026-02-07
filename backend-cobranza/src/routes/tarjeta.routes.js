@@ -38,16 +38,33 @@ router.post("/:id/abono", auth, async (req, res) => {
   try {
     const { monto } = req.body;
 
+    // Validaciones básicas
+    if (!monto || monto <= 0) {
+      return res.status(400).json({ msg: "Monto inválido" });
+    }
+
     const tarjeta = await Tarjeta.findOne({
       _id: req.params.id,
-      usuario: req.usuario.id // 👈 SOLO EL ID
+      usuario: req.usuario.id
     });
 
     if (!tarjeta) {
       return res.status(404).json({ msg: "Tarjeta no encontrada" });
     }
 
-    tarjeta.abonos.push({ monto });
+    // ❌ No permitir abonos mayores al restante
+    if (monto > tarjeta.restante) {
+      return res.status(400).json({
+        msg: "El abono no puede ser mayor al restante"
+      });
+    }
+
+    // Registrar abono
+    tarjeta.abonos.push({
+      monto,
+      fecha: new Date()
+    });
+
     tarjeta.restante -= monto;
 
     await tarjeta.save();
@@ -58,6 +75,28 @@ router.post("/:id/abono", auth, async (req, res) => {
     res.status(500).json({ msg: "Error al registrar abono" });
   }
 });
+
+/* =========================
+   VER DETALLE DE UNA TARJETA
+========================= */
+router.get("/:id", auth, async (req, res) => {
+  try {
+    const tarjeta = await Tarjeta.findOne({
+      _id: req.params.id,
+      usuario: req.usuario.id
+    });
+
+    if (!tarjeta) {
+      return res.status(404).json({ msg: "Tarjeta no encontrada" });
+    }
+
+    res.json(tarjeta);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ msg: "Error al obtener tarjeta" });
+  }
+});
+
 
 
 
